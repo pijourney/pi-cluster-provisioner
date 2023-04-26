@@ -1,6 +1,7 @@
 #!/bin/bash
-source postgres.sh
-source k3s.sh
+source common/postgres.sh
+source common/k3s.sh
+source resources/cluster.config
 
 cluster_init() {
     # Update and upgrade packages on all Raspberry Pis
@@ -42,4 +43,15 @@ cluster_init() {
 
     # Cleanup
     rm k3s.yaml
+
+    # Provision POstgres superuser.
+    if ! secret_exists "$SECRET_NAME"; then
+        # Generate a random secure password
+        PASSWORD=$(openssl rand -base64 32)
+        # Create a PostgreSQL user with the generated password
+        create_postgres_user "$pg_user" "$PASSWORD"
+
+        # Create a Kubernetes secret with the generated credentials
+        create_kubectl_secret "$secret_name" "$pg_user" "$PASSWORD"
+    fi
 }

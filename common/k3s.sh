@@ -39,3 +39,23 @@ install_workers() {
         fi
     done
 }
+
+# Reusable function to check if a Kubernetes secret exists
+secret_exists() {
+    local SECRET_NAME="$1"
+    local NAMESPACE="$2"
+    kubectl get secret "$SECRET_NAME" -n "$NAMESPACE" &>/dev/null
+}
+
+# Reusable function to create a Kubernetes secret
+create_kubectl_secret() {
+    local SECRET_NAME="$1"
+    local USERNAME="$2"
+    local PASSWORD="$3"
+    local NAMESPACE="$4"
+
+    kubectl create secret generic "$SECRET_NAME" \
+        --from-literal=username="$USERNAME" \
+        --from-literal=password="$PASSWORD" \
+        -n "$NAMESPACE"
+}

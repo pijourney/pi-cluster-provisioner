@@ -71,3 +71,11 @@ install_postgres() {
         error "Error: Failed to restart PostgreSQL on the master node. "
     fi
 }
+
+create_postgres_user() {
+    local PG_USER="$1"
+    local PASSWORD="$2"
+
+    # Create a user in PostgreSQL
+    ssh pi@$master "psql -U postgres -c \"CREATE USER $PG_USER WITH PASSWORD '$PASSWORD' SUPERUSER;\""
+}
