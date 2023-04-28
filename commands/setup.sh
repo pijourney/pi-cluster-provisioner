@@ -12,46 +12,31 @@ cluster_init() {
     install_workers "$MASTER_TOKEN"
     install_postgres
 
-    # Set up local kubectl access
-    info "Setting up local kubectl access"
-    ssh pi@$master "sudo cat /etc/rancher/k3s/k3s.yaml" >k3s.yaml
-    sed -i "s/127.0.0.1/$master/g" k3s.yaml
-    sed -i "s/default/pi/g" k3s.yaml
+    # Setup clsuter kubectl access
+    setup_cluster_access
 
-    # Extract cluster, context, and user from k3s.yaml
-    SERVER=$(grep "server:" k3s.yaml | awk '{print $2}')
-    CERTIFICATE_AUTHORITY_DATA=$(grep "certificate-authority-data:" k3s.yaml | awk '{print $2}')
-    CLIENT_CERTIFICATE_DATA=$(grep "client-certificate-data:" k3s.yaml | awk '{print $2}')
-    CLIENT_KEY_DATA=$(grep "client-key-data:" k3s.yaml | awk '{print $2}')
-
-    # Replace these placeholders with appropriate values
-    CLUSTER_NAME="pi"
-    USER_NAME="pi"
-    CONTEXT_NAME="pi"
-
-    # Add cluster, context, and user to the existing kubeconfig
-    kubectl config set-cluster $CLUSTER_NAME --server=$SERVER
-    kubectl config set clusters.$CLUSTER_NAME.certificate-authority-data $CERTIFICATE_AUTHORITY_DATA
-    kubectl config set-credentials $USER_NAME
-    kubectl config set users.$USER_NAME.client-certificate-data $CLIENT_CERTIFICATE_DATA
-    kubectl config set users.$USER_NAME.client-key-data $CLIENT_KEY_DATA
-    kubectl config set-context $CONTEXT_NAME --cluster="$CLUSTER_NAME" --user=$USER_NAME
-    kubectl config use-context $CONTEXT_NAME
-
-    # Set the new context
-    kubectl config use-context pi
-
-    # Cleanup
-    rm k3s.yaml
-
+    # Create the namespace if it doesn't exist
+    create_namespace "$namespace"
     # Provision POstgres superuser.
-    if ! secret_exists "$SECRET_NAME"; then
+    if ! secret_exists "$secret_name" "$namespace"; then
         # Generate a random secure password
         PASSWORD=$(openssl rand -base64 32)
         # Create a PostgreSQL user with the generated password
         create_postgres_user "$pg_user" "$PASSWORD"
 
-        # Create a Kubernetes secret with the generated credentials
-        create_kubectl_secret "$secret_name" "$pg_user" "$PASSWORD"
+        # Create a Kubernetes secret with the required key-value pairs
+        create_kubectl_secret "$secret_name" "$namespace" \
+            "host" "$db_host" \
+            "port" "$db_port" \
+            "password" "$PASSWORD" \
+            "user" "$pg_user"
+    fi
+
+    if ! secret_exists "$docker_secret_name" "$namespace"; then
+        kubectl create secret docker-registry "$docker_secret_name" \
+            --docker-server=ghcr.io \
+            --docker-username="$github_username" \
+            --docker-password="$github_token" \
+            -n "$namespace"
     fi
 }

@@ -1,5 +1,6 @@
 #!/bin/bash
-source common.sh
+source common/common.sh
+
 update_postgresql_conf() {
     ssh pi@$master <<'EOF'
     sudo sed -i.bak -E '
@@ -54,7 +55,7 @@ install_postgres() {
         error "Error: Failed to start PostgreSQL on the master node. "
     fi
 
-    scp_output=$(scp pg_hba.conf pi@$master:/tmp/ 2>&1)
+    scp_output=$(scp resources/pg_hba.conf pi@$master:/tmp/ 2>&1)
     if [ $? -ne 0 ]; then
         info "Error: Failed to copy the pg_hba.conf file to the master node. "
         error "SCP Output: $scp_output"

@@ -21,6 +21,11 @@ install_dependencies() {
     # Function to run the update, modify cmdline.txt, and set iptables alternatives on a single node
     update_node() {
         local node=$1
+        if check_k3s_installed $node; then
+            info "Skipping dependencies installation on node $node, k3s is already installed."
+            return
+        fi
+
         if ! ssh pi@$node <<'EOF'; then
             sudo apt update && sudo apt upgrade -y
             if ! sudo grep -q 'cgroup_enable=cpuset cgroup_memory=1 cgroup_enable=memory' /boot/cmdline.txt; then
@@ -37,6 +42,11 @@ EOF
     # Function to update /etc/hosts on worker nodes
     update_worker() {
         local node=$1
+        if check_k3s_installed $node; then
+            info "Skipping reboot on node $node, k3s is already installed."
+            return
+        fi
+
         if ! ssh pi@$node <<EOF; then
             if ! sudo grep -q '$masterip    pi-1' /etc/hosts; then
                 echo "$masterip    pi-1" | sudo tee -a /etc/hosts
@@ -67,6 +77,7 @@ EOF
     for pid in "${pids[@]}"; do
         wait $pid || exit 1
     done
+    info "Waiting 30 secounds for nodes to come back up..."
     sleep 30 # Wait for nodes to come back up
 }
 # Print error in red.

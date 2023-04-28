@@ -1,16 +1,11 @@
 #!/bin/bash
 source common/common.sh
-source resources/cluster.config
 source commands/setup.sh
 
-requirements_meet
+source resources/cluster.config
+source resources/cluster.private.config
 
-export master
-export masterip
-export workers
-export namespace
-export secret_name
-export master_db_user
+requirements_meet
 
 # Map commands to their corresponding functions
 if [ "$#" -ne 2 ]; then
