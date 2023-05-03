@@ -31,6 +31,14 @@ cluster_init() {
             "password" "$PASSWORD" \
             "user" "$pg_user"
     fi
+    # Provision jwt secret.
+    if ! secret_exists "$auth_secret_name" "$namespace"; then
+        # Generate a random secure password
+        JWT_TOKEN=$(openssl rand -base64 32)
+        # Create a Kubernetes secret with the required key-value pairs
+        create_kubectl_secret "$auth_secret_name" "$namespace" \
+            "$auth_secret_key_name" "$JWT_TOKEN"
+    fi
 
     if ! secret_exists "$docker_secret_name" "$namespace"; then
         kubectl create secret docker-registry "$docker_secret_name" \
