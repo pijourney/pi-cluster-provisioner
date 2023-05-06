@@ -2,30 +2,33 @@
 source common/common.sh
 
 update_postgresql_conf() {
-    ssh pi@$master <<'EOF'
-    sudo sed -i.bak -E '
-    s/^#?(max_connections[[:space:]]*=[[:space:]]*).*$/\1 100/;
-    s/^#?(shared_buffers[[:space:]]*=[[:space:]]*).*$/\1 1GB/;
-    s/^#?(effective_cache_size[[:space:]]*=[[:space:]]*).*$/\1 3GB/;
-    s/^#?(maintenance_work_mem[[:space:]]*=[[:space:]]*).*$/\1 256MB/;
-    s/^#?(checkpoint_completion_target[[:space:]]*=[[:space:]]*).*$/\1 0.9/;
-    s/^#?(wal_buffers[[:space:]]*=[[:space:]]*).*$/\1 16MB/;
-    s/^#?(default_statistics_target[[:space:]]*=[[:space:]]*).*$/\1 100/;
-    s/^#?(random_page_cost[[:space:]]*=[[:space:]]*).*$/\1 4/;
-    s/^#?(effective_io_concurrency[[:space:]]*=[[:space:]]*).*$/\1 2/;
-    s/^#?(work_mem[[:space:]]*=[[:space:]]*).*$/\1 5242kB/;
-    s/^#?(min_wal_size[[:space:]]*=[[:space:]]*).*$/\1 1GB/;
-    s/^#?(max_wal_size[[:space:]]*=[[:space:]]*).*$/\1 4GB/;
-    s/^#?(max_worker_processes[[:space:]]*=[[:space:]]*).*$/\1 4/;
-    s/^#?(max_parallel_workers_per_gather[[:space:]]*=[[:space:]]*).*$/\1 2/;
-    s/^#?(max_parallel_workers[[:space:]]*=[[:space:]]*).*$/\1 4/;
-    s/^#?(max_parallel_maintenance_workers[[:space:]]*=[[:space:]]*).*$/\1 2;
-    ' /etc/postgresql/*/main/postgresql.conf || {
-        echo "Error: Failed to update the postgresql.conf file. "
+    info "Updating the postgresql.conf file..."
+    ssh pi@$master <<EOF
+    sudo sed -i.bak -E \
+        -e 's/^#?(max_connections[[:space:]]*=[[:space:]]*).*/\1 100/' \
+        -e 's/^#?(shared_buffers[[:space:]]*=[[:space:]]*).*/\1 1GB/' \
+        -e 's/^#?(effective_cache_size[[:space:]]*=[[:space:]]*).*/\1 3GB/' \
+        -e 's/^#?(maintenance_work_mem[[:space:]]*=[[:space:]]*).*/\1 256MB/' \
+        -e 's/^#?(checkpoint_completion_target[[:space:]]*=[[:space:]]*).*/\1 0.9/' \
+        -e 's/^#?(wal_buffers[[:space:]]*=[[:space:]]*).*/\1 16MB/' \
+        -e 's/^#?(default_statistics_target[[:space:]]*=[[:space:]]*).*/\1 100/' \
+        -e 's/^#?(random_page_cost[[:space:]]*=[[:space:]]*).*/\1 4/' \
+        -e 's/^#?(effective_io_concurrency[[:space:]]*=[[:space:]]*).*/\1 2/' \
+        -e 's/^#?(work_mem[[:space:]]*=[[:space:]]*).*/\1 5242kB/' \
+        -e 's/^#?(min_wal_size[[:space:]]*=[[:space:]]*).*/\1 1GB/' \
+        -e 's/^#?(max_wal_size[[:space:]]*=[[:space:]]*).*/\1 4GB/' \
+        -e 's/^#?(max_worker_processes[[:space:]]*=[[:space:]]*).*/\1 4/' \
+        -e 's/^#?(max_parallel_workers_per_gather[[:space:]]*=[[:space:]]*).*/\1 2/' \
+        -e 's/^#?(max_parallel_workers[[:space:]]*=[[:space:]]*).*/\1 4/' \
+        -e 's/^#?(max_parallel_maintenance_workers[[:space:]]*=[[:space:]]*).*/\1 2/' \
+        -e "s/^#?(listen_addresses[[:space:]]*=[[:space:]]*).*/\1 '*'/" \
+        /etc/postgresql/*/main/postgresql.conf || {
+        echo "Error: Failed to update the postgresql.conf file."
         exit 1
     }
 EOF
 }
+
 install_postgres() {
     # Check if PostgreSQL is already installed
     if ssh pi@$master "command -v psql >/dev/null"; then
