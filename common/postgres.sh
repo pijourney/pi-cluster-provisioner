@@ -22,6 +22,7 @@ update_postgresql_conf() {
         -e 's/^#?(max_parallel_workers[[:space:]]*=[[:space:]]*).*/\1 4/' \
         -e 's/^#?(max_parallel_maintenance_workers[[:space:]]*=[[:space:]]*).*/\1 2/' \
         -e "s/^#?(listen_addresses[[:space:]]*=[[:space:]]*).*/\1 '*'/" \
+        -e "s/^#?(shared_preload_libraries[[:space:]]*=[[:space:]]*).*/\1 'pg_stat_statements'/" \
         /etc/postgresql/*/main/postgresql.conf || {
         echo "Error: Failed to update the postgresql.conf file."
         exit 1
