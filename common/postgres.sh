@@ -82,5 +82,13 @@ create_postgres_user() {
     local PASSWORD="$2"
 
     # Create a user in PostgreSQL
-    ssh pi@$master "psql -U postgres -c \"CREATE USER $PG_USER WITH PASSWORD '$PASSWORD' SUPERUSER;\""
+    ssh pi@$master "psql -U postgres -c 'DO \$\$
+    BEGIN
+        IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = '\''$PG_USER'\'') THEN
+            ALTER USER \"$PG_USER\" WITH PASSWORD '\''$PASSWORD'\'';
+        ELSE
+            CREATE USER \"$PG_USER\" WITH PASSWORD '\''$PASSWORD'\'' SUPERUSER;
+        END IF;
+    END
+    \$\$;'"
 }
